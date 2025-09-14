@@ -81,14 +81,14 @@ model Buyer {
   fullName     String
   email        String?
   phone        String
-  city         City
-  propertyType PropertyType
+  city         City?
+  propertyType PropertyType?
   bhk          Bhk? // Optional, as required
-  purpose      Purpose
+  purpose      Purpose?
   budgetMin    Int?
   budgetMax    Int?
-  timeline     Timeline
-  source       Source
+  timeline     Timeline?
+  source       Source?
   status       Status        @default(New) // Default value set to New
   notes        String?       @db.Text // @db.Text is better for long notes
   tags         String[]      // Natively supported array type in PostgreSQL

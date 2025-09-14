@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "public"."Buyer" ALTER COLUMN "city" DROP NOT NULL,
+ALTER COLUMN "propertyType" DROP NOT NULL,
+ALTER COLUMN "purpose" DROP NOT NULL,
+ALTER COLUMN "timeline" DROP NOT NULL,
+ALTER COLUMN "source" DROP NOT NULL;
