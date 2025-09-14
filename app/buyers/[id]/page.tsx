@@ -208,9 +208,9 @@ export default function ViewLeadPage({ params }: { params: { id: string } }) {
                       <div className="text-sm">
                         <span className="font-medium text-gray-900">{change.field}</span>
                         <span className="text-gray-600"> changed from </span>
-                        <span className="font-medium text-red-600">"{change.oldValue}"</span>
+                        <span className="font-medium text-red-600">&quot;{change.oldValue}&quot;</span>
                         <span className="text-gray-600"> to </span>
-                        <span className="font-medium text-green-600">"{change.newValue}"</span>
+                        <span className="font-medium text-green-600">&quot;{change.newValue}&quot;</span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         Changed by {change.changedBy} on {formatDate(change.changedAt)}
