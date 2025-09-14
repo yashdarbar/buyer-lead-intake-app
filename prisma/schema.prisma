@@ -12,5 +12,110 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = evn("DIRECT_URL")
 }
+
+// ---------------------------------------------
+// ENUMS: Defining these separately keeps the models clean.
+// ---------------------------------------------
+enum City {
+  Chandigarh
+  Mohali
+  Zirakpur
+  Panchkula
+  Other
+}
+
+enum PropertyType {
+  Apartment
+  Villa
+  Plot
+  Office
+  Retail
+}
+
+enum Bhk {
+  ONE
+  TWO
+  THREE
+  FOUR
+  Studio
+}
+
+enum Purpose {
+  Buy
+  Rent
+}
+
+enum Timeline {
+  IMMEDIATE // 0-3m
+  THREE_TO_SIX_MONTHS // 3-6m
+  MORE_THAN_SIX_MONTHS // >6m
+  Exploring
+}
+
+enum Source {
+  Website
+  Referral
+  Walk_in
+  Call
+  Other
+}
+
+enum Status {
+  New
+  Qualified
+  Contacted
+  Visited
+  Negotiation
+  Converted
+  Dropped
+}
+
+
+// ---------------------------------------------
+// MODELS: Your application's tables.
+// ---------------------------------------------
+
+model Buyer {
+  id           String        @id @default(uuid())
+  fullName     String
+  email        String?
+  phone        String
+  city         City
+  propertyType PropertyType
+  bhk          Bhk? // Optional, as required
+  purpose      Purpose
+  budgetMin    Int?
+  budgetMax    Int?
+  timeline     Timeline
+  source       Source
+  status       Status        @default(New) // Default value set to New
+  notes        String?       @db.Text // @db.Text is better for long notes
+  tags         String[]      // Natively supported array type in PostgreSQL
+
+  // This is the crucial link to Supabase Auth.
+  // It stores the UUID of a user from the `auth.users` table.
+  ownerId      String        @db.Uuid
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // This creates the one-to-many relationship with BuyerHistory
+  history      BuyerHistory[]
+
+  // Note: Business logic like `budgetMax >= budgetMin` and string length
+  // constraints (2-80) will be handled by Zod in your application code,
+  // not directly in the database schema.
+}
+
+model BuyerHistory {
+  id        String   @id @default(uuid())
+  changedBy String // Can store the user's ID or email/name
+  changedAt DateTime @default(now())
+  diff      Json // Prisma's native JSON type for storing changes
+
+  // This defines the many-to-one relationship back to the Buyer
+  buyer   Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId String // Foreign key constraint
+}
+

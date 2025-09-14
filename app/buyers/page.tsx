@@ -1,10 +1,12 @@
 "use client";
 
+import { BuyerLeadsHeader } from "@/components/buyer-leads-header";
+import { BuyerLeadsTable } from "@/components/buyer-leads-table";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react"
 
-export default function Dashboard() {
+export default function BuyersPage() {
     const supabase = createClient()
     const [user, setUser] = useState<any>(null);
     const router = useRouter();
@@ -35,9 +37,11 @@ export default function Dashboard() {
 
 
     return (
-        <div>
-            <h1>User</h1>
-            {/* <p>{user}</p> */}
-        </div>
+        <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <BuyerLeadsHeader />
+        <BuyerLeadsTable />
+      </div>
+    </div>
     )
 }
