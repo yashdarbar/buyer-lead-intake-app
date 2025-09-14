@@ -1,4 +1,4 @@
-import { PrismaClient } from '../app/generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
 // Declare a global variable to hold the Prisma client instance.
 // This is done to prevent creating new instances on every hot reload in development.
