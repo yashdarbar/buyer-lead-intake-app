@@ -18,7 +18,7 @@ export const BuyerFormSchema = z.object({
   budgetMin: z.coerce.number().optional(),
   budgetMax: z.coerce.number().optional(),
   notes: z.string().max(1000, 'Notes must be 1000 characters or less').optional(),
-  tags: z.string().optional(),
+  tags: z.string().optional().transform(val => val ? val.split(',').map(tag => tag.trim()).filter(Boolean) : []),
 }).refine(data => {
   if ((data.propertyType === 'Apartment' || data.propertyType === 'Villa') && !data.bhk) {
     return false;
