@@ -22,9 +22,13 @@ import { Badge } from "@/components/ui/badge"
 // Infer the form data type from your Zod schema
 type BuyerFormData = z.infer<typeof BuyerFormSchema>
 
+type BuyerFormInput = z.input<typeof BuyerFormSchema>
+
+type BuyerFormOutput = z.output<typeof BuyerFormSchema>
+
 export default function NewBuyerLeadPage() {
   const router = useRouter()
-  const form = useForm<BuyerFormData>({
+  const form = useForm<BuyerFormInput>({
     resolver: zodResolver(BuyerFormSchema),
     defaultValues: {
       fullName: "",
@@ -53,11 +57,11 @@ export default function NewBuyerLeadPage() {
   const tagsValue = watch("tags") || "";
   const tagList = tagsValue.split(",").map(tag => tag.trim()).filter(Boolean);
 
-  const onSubmit = async (data: BuyerFormData) => {
+  const onSubmit = async (data: BuyerFormInput) => {
     const formData = new FormData();
     // Convert the structured data into FormData for the server action
     for (const key in data) {
-      const value = data[key as keyof BuyerFormData];
+      const value = data[key as keyof BuyerFormInput];
       if (value !== null && value !== undefined) {
         formData.append(key, String(value));
       }
