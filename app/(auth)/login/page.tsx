@@ -5,7 +5,7 @@ import { useState } from "react";
 import { AuthForm } from "@/components/auth-form"
 // import DemoLogin from "@/components/auth/DemoLogin"
 import { createClient } from "@/utils/supabase/client"
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 interface AuthFormData {
