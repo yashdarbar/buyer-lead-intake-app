@@ -8,7 +8,7 @@ import prisma from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { Prisma } from '../../generated/prisma';
+import { Prisma } from '@prisma/client';
 
 // import type { Prisma } from '@prisma/client';
 
