@@ -11,6 +11,38 @@ import { redirect } from 'next/navigation';
 
 import type { Prisma } from '@prisma/client';
 
+export async function deleteLead(leadId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: 'Authentication required.' };
+  }
+
+  try {
+    // Ownership check: Ensure the user owns this lead before deleting
+    const lead = await prisma.buyer.findUnique({
+      where: { id: leadId },
+    });
+
+    if (!lead || lead.ownerId !== user.id) {
+      return { success: false, message: 'Unauthorized or lead not found.' };
+    }
+
+    await prisma.buyer.delete({
+      where: {
+        id: leadId,
+      },
+    });
+
+    revalidatePath('/buyers'); // This clears the cache for the buyers page
+    return { success: true, message: 'Lead deleted successfully.' };
+
+  } catch (error) {
+    console.error("Database Error:", error);
+    return { success: false, message: 'Failed to delete lead.' };
+  }
+}
 
 export async function createBuyerLead(formData: FormData) {
   const supabase = await createClient();
@@ -79,6 +111,35 @@ export async function createBuyerLead(formData: FormData) {
   redirect('/buyers');
 }
 
-// You will add your other buyer-related actions here later...
-// export async function updateBuyer(formData: FormData) { ... }
-// export async function deleteBuyer(id: string) { ... }
+export async function getBuyers(page = 1, query = "") {
+  const pageSize = 10;
+  const skip = (page - 1) * pageSize;
+
+  const where = query ? {
+    OR: [
+      { fullName: { contains: query, mode: 'insensitive' } },
+      { email: { contains: query, mode: 'insensitive' } },
+      { phone: { contains: query, mode: 'insensitive' } },
+    ],
+  } : {};
+
+  try {
+    const buyers = await prisma.buyer.findMany({
+      where,
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      take: pageSize,
+      skip: skip,
+    });
+
+    const totalBuyers = await prisma.buyer.count({ where });
+
+    return { buyers, totalPages: Math.ceil(totalBuyers / pageSize) };
+
+  } catch (error) {
+    console.error('Database Error:', error);
+    // In a real app, you might throw a more specific error
+    return { buyers: [], totalPages: 0 };
+  }
+}

@@ -11,7 +11,11 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
+
+
 
 // ---------------------------------------------
 // ENUMS: Defining these separately keeps the models clean.
@@ -115,6 +119,6 @@ model BuyerHistory {
 
   // This defines the many-to-one relationship back to the Buyer
   buyer   Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  buyerId String // Foreign key constraint
+  buyerId String   @db.Uuid // Foreign key constraint
 }
 

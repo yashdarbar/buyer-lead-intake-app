@@ -25,14 +25,14 @@ CREATE TABLE "public"."Buyer" (
     "fullName" TEXT NOT NULL,
     "email" TEXT,
     "phone" TEXT NOT NULL,
-    "city" "public"."City" NOT NULL,
-    "propertyType" "public"."PropertyType" NOT NULL,
+    "city" "public"."City",
+    "propertyType" "public"."PropertyType",
     "bhk" "public"."Bhk",
-    "purpose" "public"."Purpose" NOT NULL,
+    "purpose" "public"."Purpose",
     "budgetMin" INTEGER,
     "budgetMax" INTEGER,
-    "timeline" "public"."Timeline" NOT NULL,
-    "source" "public"."Source" NOT NULL,
+    "timeline" "public"."Timeline",
+    "source" "public"."Source",
     "status" "public"."Status" NOT NULL DEFAULT 'New',
     "notes" TEXT,
     "tags" TEXT[],
@@ -49,7 +49,7 @@ CREATE TABLE "public"."BuyerHistory" (
     "changedBy" TEXT NOT NULL,
     "changedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "diff" JSONB NOT NULL,
-    "buyerId" TEXT NOT NULL,
+    "buyerId" UUID NOT NULL,
 
     CONSTRAINT "BuyerHistory_pkey" PRIMARY KEY ("id")
 );
