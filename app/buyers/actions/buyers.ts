@@ -8,8 +8,9 @@ import prisma from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { Prisma } from '@/app/generated/prisma';
 
-import type { Prisma } from '@prisma/client';
+// import type { Prisma } from '@prisma/client';
 
 export async function deleteLead(leadId: string) {
   const supabase = await createClient();
@@ -115,7 +116,7 @@ export async function getBuyers(page = 1, query = "") {
   const pageSize = 10;
   const skip = (page - 1) * pageSize;
 
-  const where = query ? {
+  const where: Prisma.BuyerWhereInput = query ? {
     OR: [
       { fullName: { contains: query, mode: 'insensitive' } },
       { email: { contains: query, mode: 'insensitive' } },
