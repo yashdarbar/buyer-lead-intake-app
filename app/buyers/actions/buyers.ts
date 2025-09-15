@@ -119,7 +119,7 @@ export async function getBuyers(page = 1, query = "") {
     OR: [
       { fullName: { contains: query, mode: 'insensitive' } },
       { email: { contains: query, mode: 'insensitive' } },
-      { phone: { contains: query, mode: 'insensitive' } },
+      { phone: { contains: query} },
     ],
   } : {};
 
