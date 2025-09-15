@@ -20,7 +20,7 @@ interface BuyersPageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export default async function BuyersPage({ searchParams }: BuyersPageProps) {
+export default async function BuyersPage({ searchParams }: { searchParams: any}) {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
