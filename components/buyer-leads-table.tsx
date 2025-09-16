@@ -10,7 +10,7 @@ import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { DeleteLeadModal } from "./delete-lead-modal"
 // 1. Import the 'Buyer' type from your generated Prisma client
-import type { Buyer } from "@/app/generated/prisma"
+import type { Buyer } from "@prisma/client"
 import { deleteLead } from "@/app/buyers/actions/buyers" // We will create this action next
 import { toast } from "react-hot-toast" // Assuming you use a toast library for notifications
 
