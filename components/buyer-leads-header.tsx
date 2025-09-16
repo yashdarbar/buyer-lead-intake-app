@@ -1,23 +1,51 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Plus } from "lucide-react"
 
+function useDebouncedCallback<T extends (...args: any[]) => void>(callback: T, delayMs: number) {
+  return useMemo(() => {
+    let timer: any;
+    return (...args: Parameters<T>) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => callback(...args), delayMs);
+    };
+  }, [callback, delayMs]);
+}
+
 export function BuyerLeadsHeader() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [sourceFilter, setSourceFilter] = useState("all")
-  const [budgetFilter, setBudgetFilter] = useState("all")
-  const [locationFilter, setLocationFilter] = useState("all")
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const q = searchParams.get("q") || "";
+  const statusValue = searchParams.get("status") || "all";
+  const cityValue = searchParams.get("city") || "all";
+  const propertyTypeValue = searchParams.get("propertyType") || "all";
+  const timelineValue = searchParams.get("timeline") || "all";
+  const budgetValue = searchParams.get("budget") || "all";
+
+  const updateParam = (name: string, value: string) => {
+    const params = new URLSearchParams(searchParams?.toString());
+    if (value && value !== "all") params.set(name, value); else params.delete(name);
+    // Reset pagination on any filter/search change
+    params.set("page", "1");
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  };
+
+  const onSearchChange = useDebouncedCallback((value: string) => {
+    updateParam("q", value.trim());
+  }, 300);
 
   return (
     <div className="mb-8">
-      {/* Page Title and Create Button */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Buyer Leads</h1>
         <Link href="/buyers/new">
@@ -28,93 +56,103 @@ export function BuyerLeadsHeader() {
         </Link>
       </div>
 
-      {/* Search Input */}
       <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
+            key={q}
             type="text"
             placeholder="Search by name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            defaultValue={q}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10 border-gray-300 focus:border-blue-600 focus:ring-blue-600"
           />
         </div>
       </div>
 
-      {/* Filter Dropdowns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div>
-          <Label htmlFor="status-filter" className="text-sm font-medium text-gray-700 mb-1 block">
-            Status
-          </Label>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Label htmlFor="status-filter" className="text-sm font-medium text-gray-700 mb-1 block">Status</Label>
+          <Select value={statusValue} onValueChange={(v) => updateParam("status", v)}>
             <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="contacted">Contacted</SelectItem>
-              <SelectItem value="qualified">Qualified</SelectItem>
-              <SelectItem value="converted">Converted</SelectItem>
-              <SelectItem value="lost">Lost</SelectItem>
+              <SelectItem value="New">New</SelectItem>
+              <SelectItem value="Qualified">Qualified</SelectItem>
+              <SelectItem value="Contacted">Contacted</SelectItem>
+              <SelectItem value="Visited">Visited</SelectItem>
+              <SelectItem value="Negotiation">Negotiation</SelectItem>
+              <SelectItem value="Converted">Converted</SelectItem>
+              <SelectItem value="Dropped">Dropped</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label htmlFor="source-filter" className="text-sm font-medium text-gray-700 mb-1 block">
-            Source
-          </Label>
-          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+          <Label htmlFor="city-filter" className="text-sm font-medium text-gray-700 mb-1 block">City</Label>
+          <Select value={cityValue} onValueChange={(v) => updateParam("city", v)}>
             <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
-              <SelectValue placeholder="All Sources" />
+              <SelectValue placeholder="All Cities" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Sources</SelectItem>
-              <SelectItem value="website">Website</SelectItem>
-              <SelectItem value="referral">Referral</SelectItem>
-              <SelectItem value="social">Social Media</SelectItem>
-              <SelectItem value="advertising">Advertising</SelectItem>
-              <SelectItem value="cold-call">Cold Call</SelectItem>
+              <SelectItem value="all">All Cities</SelectItem>
+              <SelectItem value="Chandigarh">Chandigarh</SelectItem>
+              <SelectItem value="Mohali">Mohali</SelectItem>
+              <SelectItem value="Zirakpur">Zirakpur</SelectItem>
+              <SelectItem value="Panchkula">Panchkula</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label htmlFor="budget-filter" className="text-sm font-medium text-gray-700 mb-1 block">
-            Budget Range
-          </Label>
-          <Select value={budgetFilter} onValueChange={setBudgetFilter}>
+          <Label htmlFor="propertyType-filter" className="text-sm font-medium text-gray-700 mb-1 block">Property Type</Label>
+          <Select value={propertyTypeValue} onValueChange={(v) => updateParam("propertyType", v)}>
+            <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="Apartment">Apartment</SelectItem>
+              <SelectItem value="Villa">Villa</SelectItem>
+              <SelectItem value="Plot">Plot</SelectItem>
+              <SelectItem value="Office">Office</SelectItem>
+              <SelectItem value="Retail">Retail</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="timeline-filter" className="text-sm font-medium text-gray-700 mb-1 block">Timeline</Label>
+          <Select value={timelineValue} onValueChange={(v) => updateParam("timeline", v)}>
+            <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
+              <SelectValue placeholder="All Timelines" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Timelines</SelectItem>
+              <SelectItem value="IMMEDIATE">0-3 Months</SelectItem>
+              <SelectItem value="THREE_TO_SIX_MONTHS">3-6 Months</SelectItem>
+              <SelectItem value="MORE_THAN_SIX_MONTHS">6+ Months</SelectItem>
+              <SelectItem value="Exploring">Just Exploring</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="budget-filter" className="text-sm font-medium text-gray-700 mb-1 block">Budget (INR)</Label>
+          <Select value={budgetValue} onValueChange={(v) => updateParam("budget", v)}>
             <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
               <SelectValue placeholder="All Budgets" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Budgets</SelectItem>
-              <SelectItem value="0-100k">$0 - $100k</SelectItem>
-              <SelectItem value="100k-250k">$100k - $250k</SelectItem>
-              <SelectItem value="250k-500k">$250k - $500k</SelectItem>
-              <SelectItem value="500k-1m">$500k - $1M</SelectItem>
-              <SelectItem value="1m+">$1M+</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="location-filter" className="text-sm font-medium text-gray-700 mb-1 block">
-            Location
-          </Label>
-          <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
-              <SelectValue placeholder="All Locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              <SelectItem value="downtown">Downtown</SelectItem>
-              <SelectItem value="suburbs">Suburbs</SelectItem>
-              <SelectItem value="waterfront">Waterfront</SelectItem>
-              <SelectItem value="uptown">Uptown</SelectItem>
+              <SelectItem value="0-1000000">Up to ₹10L</SelectItem>
+              <SelectItem value="1000000-2500000">₹10L - ₹25L</SelectItem>
+              <SelectItem value="2500000-5000000">₹25L - ₹50L</SelectItem>
+              <SelectItem value="5000000-10000000">₹50L - ₹1Cr</SelectItem>
+              <SelectItem value="10000000-">₹1Cr+</SelectItem>
             </SelectContent>
           </Select>
         </div>

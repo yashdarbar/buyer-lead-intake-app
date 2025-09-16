@@ -17,10 +17,10 @@ export const dynamic = 'force-dynamic';
 //   };
 // }
 interface BuyersPageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function BuyersPage({ searchParams }: { searchParams: any}) {
+export default async function BuyersPage({ searchParams }: { searchParams: BuyersPageProps["searchParams"] }) {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -30,13 +30,8 @@ export default async function BuyersPage({ searchParams }: { searchParams: any})
 
 //   const currentPage = Number(searchParams.page) || 1;
 //   const query = searchParams.query || '';
-  const page = Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page;
-  const query = Array.isArray(searchParams.query) ? searchParams.query[0] : searchParams.query;
-
-  const currentPage = Number(page) || 1;
-  const searchQuery = query || '';
-
-  const { buyers, totalPages } = await getBuyers(currentPage, query);
+  const sp = await searchParams;
+  const { buyers, totalPages } = await getBuyers(sp);
 
   return (
     <div className="min-h-screen bg-gray-50">
