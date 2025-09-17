@@ -80,34 +80,50 @@ export function BuyerLeadsHeader() {
   };
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Buyer Leads</h1>
-        <div className="flex items-center gap-3">
-          <Link href="/buyers/import">
-            <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Import Leads
+    <div className="mb-6 sm:mb-8">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
+          Buyer Leads
+        </h1>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          {/* Mobile: Stack buttons vertically, Desktop: Horizontal */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <Link href="/buyers/import" className="w-full sm:w-auto">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="sm:inline">Import Leads</span>
+              </Button>
+            </Link>
+
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+              onClick={handleExportCSV}
+              disabled={isExporting}
+            >
+              <Download className="h-4 w-4" />
+              <span className="sm:inline">
+                {isExporting ? "Exporting..." : "Export CSV"}
+              </span>
             </Button>
-          </Link>
-          <Button
-            variant="outline"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-            onClick={handleExportCSV}
-            disabled={isExporting}
-          >
-            <Download className="h-4 w-4" />
-            {isExporting ? "Exporting..." : "Export CSV"}
-          </Button>
-          <Link href="/buyers/new">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Lead
-            </Button>
-          </Link>
+
+            <Link href="/buyers/new" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2">
+                <Plus className="h-4 w-4" />
+                <span className="sm:inline">Create Lead</span>
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
+      {/* Search Bar */}
       <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -122,11 +138,14 @@ export function BuyerLeadsHeader() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div>
-          <Label htmlFor="status-filter" className="text-sm font-medium text-gray-700 mb-1 block">Status</Label>
+      {/* Filters Grid - Responsive Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+        <div className="w-full">
+          <Label htmlFor="status-filter" className="text-sm font-medium text-gray-700 mb-1 block">
+            Status
+          </Label>
           <Select value={statusValue} onValueChange={(v) => updateParam("status", v)}>
-            <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
+            <SelectTrigger className="w-full border-gray-300 focus:border-blue-600 focus:ring-blue-600">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -142,10 +161,12 @@ export function BuyerLeadsHeader() {
           </Select>
         </div>
 
-        <div>
-          <Label htmlFor="city-filter" className="text-sm font-medium text-gray-700 mb-1 block">City</Label>
+        <div className="w-full">
+          <Label htmlFor="city-filter" className="text-sm font-medium text-gray-700 mb-1 block">
+            City
+          </Label>
           <Select value={cityValue} onValueChange={(v) => updateParam("city", v)}>
-            <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
+            <SelectTrigger className="w-full border-gray-300 focus:border-blue-600 focus:ring-blue-600">
               <SelectValue placeholder="All Cities" />
             </SelectTrigger>
             <SelectContent>
@@ -159,10 +180,12 @@ export function BuyerLeadsHeader() {
           </Select>
         </div>
 
-        <div>
-          <Label htmlFor="propertyType-filter" className="text-sm font-medium text-gray-700 mb-1 block">Property Type</Label>
+        <div className="w-full">
+          <Label htmlFor="propertyType-filter" className="text-sm font-medium text-gray-700 mb-1 block">
+            Property Type
+          </Label>
           <Select value={propertyTypeValue} onValueChange={(v) => updateParam("propertyType", v)}>
-            <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
+            <SelectTrigger className="w-full border-gray-300 focus:border-blue-600 focus:ring-blue-600">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
@@ -176,10 +199,12 @@ export function BuyerLeadsHeader() {
           </Select>
         </div>
 
-        <div>
-          <Label htmlFor="timeline-filter" className="text-sm font-medium text-gray-700 mb-1 block">Timeline</Label>
+        <div className="w-full">
+          <Label htmlFor="timeline-filter" className="text-sm font-medium text-gray-700 mb-1 block">
+            Timeline
+          </Label>
           <Select value={timelineValue} onValueChange={(v) => updateParam("timeline", v)}>
-            <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
+            <SelectTrigger className="w-full border-gray-300 focus:border-blue-600 focus:ring-blue-600">
               <SelectValue placeholder="All Timelines" />
             </SelectTrigger>
             <SelectContent>
@@ -192,10 +217,12 @@ export function BuyerLeadsHeader() {
           </Select>
         </div>
 
-        <div>
-          <Label htmlFor="budget-filter" className="text-sm font-medium text-gray-700 mb-1 block">Budget (INR)</Label>
+        <div className="w-full sm:col-span-2 lg:col-span-1">
+          <Label htmlFor="budget-filter" className="text-sm font-medium text-gray-700 mb-1 block">
+            Budget (INR)
+          </Label>
           <Select value={budgetValue} onValueChange={(v) => updateParam("budget", v)}>
-            <SelectTrigger className="border-gray-300 focus:border-blue-600 focus:ring-blue-600">
+            <SelectTrigger className="w-full border-gray-300 focus:border-blue-600 focus:ring-blue-600">
               <SelectValue placeholder="All Budgets" />
             </SelectTrigger>
             <SelectContent>
