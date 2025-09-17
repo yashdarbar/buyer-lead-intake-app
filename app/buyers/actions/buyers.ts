@@ -10,6 +10,10 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { notFound } from 'next/navigation';
+// Lazy import to avoid type resolution at build if deps not installed yet
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import Papa from 'papaparse';
 
 // import type { Prisma } from '@prisma/client';
 
@@ -70,25 +74,6 @@ export async function createBuyerLead(formData: FormData) {
   try {
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const newBuyer = await tx.buyer.create({
-//         data: {
-//           // Explicitly map fields from validatedData
-//           fullName: validatedData.fullName,
-//           email: validatedData.email,
-//           phone: validatedData.phone,
-//           city: validatedData.city,
-//           propertyType: validatedData.propertyType,
-//           purpose: validatedData.purpose,
-//           timeline: validatedData.timeline,
-//           source: validatedData.source,
-//           budgetMin: validatedData.budgetMin,
-//           budgetMax: validatedData.budgetMax,
-//           notes: validatedData.notes,
-
-//           // Handle special cases
-//           bhk: validatedData.bhk || null, // Handle optional enum
-//           tags: tagsArray,                 // Use the correctly typed array
-//           ownerId: user.id,                // Add the ownerId
-//         },
         data: {
           ...validatedData,
           bhk: validatedData.bhk || null,
@@ -112,11 +97,6 @@ export async function createBuyerLead(formData: FormData) {
   revalidatePath('/buyers');
   redirect('/buyers');
 }
-
-// Overloads to support existing calls and new filters
-//
-
-
 
 export async function getBuyers(
     searchParams: { [key: string]: string | string[] | undefined }
@@ -282,4 +262,198 @@ export async function updateBuyerLead(id: string, formData: FormData) {
   revalidatePath('/buyers');
   revalidatePath(`/buyers/${id}`);
   redirect(`/buyers/${id}`);
+}
+
+// Import buyers from CSV with per-row validation
+export async function importBuyersCSV(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: 'Authentication required.' } as const;
+  }
+
+  const file = formData.get('file');
+  if (!file || !(file instanceof File)) {
+    return { success: false, message: 'No file uploaded.' } as const;
+  }
+
+  const filename = (file as File).name?.toLowerCase() || '';
+  if (!filename.endsWith('.csv')) {
+    return { success: false, message: 'Please upload a .csv file.' } as const;
+  }
+
+  const text = await (file as File).text();
+  const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+  if (parsed.errors && parsed.errors.length > 0) {
+    return { success: false, message: 'CSV parsing failed.', errors: parsed.errors.map((e: any) => `Row ${e.row ?? '?'}: ${e.message}`) } as const;
+  }
+
+  const rows = (parsed.data as any[]).filter(Boolean);
+  if (rows.length > 200) {
+    return { success: false, message: 'Row limit exceeded. Max 200 rows allowed.' } as const;
+  }
+
+  const requiredHeaders = ['fullName','email','phone','city','propertyType','bhk','purpose','budgetMin','budgetMax','timeline','source','notes','tags','status'];
+  const headersInFile = parsed.meta?.fields || [];
+  const missing = requiredHeaders.filter(h => !headersInFile.includes(h));
+  if (missing.length > 0) {
+    return { success: false, message: `Missing required headers: ${missing.join(', ')}` } as const;
+  }
+
+  const validRows: any[] = [];
+  const importErrors: string[] = [];
+
+  rows.forEach((row, idx) => {
+    // Ensure all keys are strings; Papa already provides strings
+    const result = BuyerFormSchema.safeParse(row);
+    const displayRow = idx + 2; // account for header row being line 1
+    if (!result.success) {
+      const flat = result.error.flatten().fieldErrors;
+      const messages = Object.entries(flat).flatMap(([field, msgs]) => (msgs || []).map(m => `${field}: ${m}`));
+      if (messages.length === 0) messages.push('Invalid row');
+      importErrors.push(`Row ${displayRow}: ${messages.join('; ')}`);
+      return;
+    }
+
+    const data = result.data as any;
+    // Transformations: tags already transformed to array by schema; ensure optional enums nulls handled
+    const toInsert: any = {
+      ...data,
+      bhk: data.bhk ?? null,
+      email: data.email || null,
+      notes: data.notes || null,
+      budgetMin: data.budgetMin ?? null,
+      budgetMax: data.budgetMax ?? null,
+      ownerId: user.id,
+    };
+    validRows.push(toInsert);
+  });
+
+  if (importErrors.length > 0) {
+    return { success: false, message: 'Validation failed.', errors: importErrors } as const;
+  }
+
+  if (validRows.length === 0) {
+    return { success: false, message: 'No valid rows found.' } as const;
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.buyer.createMany({ data: validRows, skipDuplicates: true });
+    });
+  } catch (error) {
+    console.error('Database Error:', error);
+    return { success: false, message: 'Failed to import leads.' } as const;
+  }
+
+  revalidatePath('/buyers');
+  return { success: true } as const;
+}
+
+// Export buyers to CSV with filtering logic
+export async function exportBuyersCSV(searchParamsString: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: 'Authentication required.' } as const;
+  }
+
+  try {
+    // Parse search params to get filters
+    const searchParams = new URLSearchParams(searchParamsString);
+    const query = searchParams.get("q") || "";
+
+    const andConditions: Prisma.BuyerWhereInput[] = [];
+
+    // Add owner filter to only export user's own leads
+    andConditions.push({ ownerId: user.id });
+
+    // --- SEARCH LOGIC ---
+    if (query) {
+      andConditions.push({
+        OR: [
+          { fullName: { contains: query, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    // --- FILTER LOGIC using string whitelists to avoid enum casting issues ---
+    const STATUS_VALUES = ['New','Qualified','Contacted','Visited','Negotiation','Converted','Dropped'];
+    const CITY_VALUES = ['Chandigarh','Mohali','Zirakpur','Panchkula','Other'];
+    const PROPERTY_TYPE_VALUES = ['Apartment','Villa','Plot','Office','Retail'];
+    const TIMELINE_VALUES = ['IMMEDIATE','THREE_TO_SIX_MONTHS','MORE_THAN_SIX_MONTHS','Exploring'];
+
+    const statusStr = searchParams.get("status");
+    if (statusStr && STATUS_VALUES.includes(statusStr)) {
+      andConditions.push({ status: statusStr as any });
+    }
+
+    const cityStr = searchParams.get("city");
+    if (cityStr && CITY_VALUES.includes(cityStr)) {
+      andConditions.push({ city: cityStr as any });
+    }
+
+    const propertyTypeStr = searchParams.get("propertyType");
+    if (propertyTypeStr && PROPERTY_TYPE_VALUES.includes(propertyTypeStr)) {
+      andConditions.push({ propertyType: propertyTypeStr as any });
+    }
+
+    const timelineStr = searchParams.get("timeline");
+    if (timelineStr && TIMELINE_VALUES.includes(timelineStr)) {
+      andConditions.push({ timeline: timelineStr as any });
+    }
+
+    // Budget filter logic
+    const budgetStr = searchParams.get("budget");
+    if (budgetStr && budgetStr !== "all") {
+      const [minStr, maxStr] = budgetStr.split("-");
+      const min = minStr ? parseInt(minStr) : null;
+      const max = maxStr ? parseInt(maxStr) : null;
+
+      if (min !== null) {
+        andConditions.push({ budgetMax: { gte: min } });
+      }
+      if (max !== null) {
+        andConditions.push({ budgetMin: { lte: max } });
+      }
+    }
+
+    const where: Prisma.BuyerWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+
+    // Fetch all matching buyers (no pagination)
+    const buyers = await prisma.buyer.findMany({
+      where,
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    // Transform data for CSV export
+    const csvData = buyers.map(buyer => ({
+      fullName: buyer.fullName,
+      email: buyer.email || '',
+      phone: buyer.phone,
+      city: buyer.city || '',
+      propertyType: buyer.propertyType || '',
+      bhk: buyer.bhk || '',
+      purpose: buyer.purpose || '',
+      budgetMin: buyer.budgetMin || '',
+      budgetMax: buyer.budgetMax || '',
+      timeline: buyer.timeline || '',
+      source: buyer.source || '',
+      status: buyer.status,
+      notes: buyer.notes || '',
+      tags: Array.isArray(buyer.tags) ? buyer.tags.join(',') : '',
+      createdAt: buyer.createdAt.toISOString(),
+      updatedAt: buyer.updatedAt.toISOString(),
+    }));
+
+    // Convert to CSV using Papa.unparse
+    const csvString = Papa.unparse(csvData);
+
+    return { success: true, csvData: csvString } as const;
+  } catch (error) {
+    console.error('Export Error:', error);
+    return { success: false, message: 'Failed to export leads.' } as const;
+  }
 }

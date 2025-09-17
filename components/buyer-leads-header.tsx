@@ -2,12 +2,14 @@
 
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus } from "lucide-react"
+import { Search, Plus, Upload, Download } from "lucide-react"
+import { exportBuyersCSV } from "@/app/buyers/actions/buyers"
+import toast from "react-hot-toast"
 
 function useDebouncedCallback<T extends (...args: any[]) => void>(callback: T, delayMs: number) {
   return useMemo(() => {
@@ -23,6 +25,7 @@ export function BuyerLeadsHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isExporting, setIsExporting] = useState(false);
 
   const q = searchParams.get("q") || "";
   const statusValue = searchParams.get("status") || "all";
@@ -44,16 +47,63 @@ export function BuyerLeadsHeader() {
     updateParam("q", value.trim());
   }, 300);
 
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const queryString = searchParams.toString();
+      const result = await exportBuyersCSV(queryString);
+
+      if (result.success && result.csvData) {
+        // Create and download the CSV file
+        const blob = new Blob([result.csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `buyer-leads-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success('CSV exported successfully!');
+      } else {
+        toast.error(result.message || 'Failed to export CSV');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('An error occurred while exporting CSV');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Buyer Leads</h1>
-        <Link href="/buyers/new">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create Lead
+        <div className="flex items-center gap-3">
+          <Link href="/buyers/import">
+            <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Import Leads
+            </Button>
+          </Link>
+          <Button
+            variant="outline"
+            className="border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            onClick={handleExportCSV}
+            disabled={isExporting}
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? "Exporting..." : "Export CSV"}
           </Button>
-        </Link>
+          <Link href="/buyers/new">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Create Lead
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="mb-4">

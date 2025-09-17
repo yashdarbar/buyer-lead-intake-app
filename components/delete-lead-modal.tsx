@@ -11,15 +11,16 @@ import {
 } from "@/components/ui/dialog"
 
 interface DeleteLeadModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
+  leadId: string
   leadName: string
+  onDelete: () => void
+  onCancel: () => void
+  isDeleting?: boolean
 }
 
-export function DeleteLeadModal({ isOpen, onClose, onConfirm, leadName }: DeleteLeadModalProps) {
+export function DeleteLeadModal({ leadId, leadName, onDelete, onCancel, isDeleting = false }: DeleteLeadModalProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={true} onOpenChange={onCancel}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-gray-900">Delete Lead</DialogTitle>
@@ -31,13 +32,18 @@ export function DeleteLeadModal({ isOpen, onClose, onConfirm, leadName }: Delete
         <DialogFooter className="flex gap-3">
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={onCancel}
             className="border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent"
+            disabled={isDeleting}
           >
             Cancel
           </Button>
-          <Button onClick={onConfirm} className="bg-red-600 hover:bg-red-700 text-white">
-            Delete
+          <Button
+            onClick={onDelete}
+            className="bg-red-600 hover:bg-red-700 text-white"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
           </Button>
         </DialogFooter>
       </DialogContent>

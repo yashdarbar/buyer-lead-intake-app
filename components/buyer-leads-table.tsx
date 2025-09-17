@@ -40,7 +40,8 @@ export function BuyerLeadsTable({ initialLeads }: BuyerLeadsTableProps) {
     isOpen: false,
     leadId: null,
     leadName: "",
-  })
+  })
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDeleteClick = (leadId: string, leadName: string) => {
     setDeleteModal({ isOpen: true, leadId, leadName })
@@ -49,15 +50,23 @@ export function BuyerLeadsTable({ initialLeads }: BuyerLeadsTableProps) {
   const handleDeleteConfirm = async () => {
     if (!deleteModal.leadId) return;
 
-    const result = await deleteLead(deleteModal.leadId);
+    setIsDeleting(true);
+    try {
+      const result = await deleteLead(deleteModal.leadId);
 
-    if (result.success) {
-      setLeads(leads.filter((lead) => lead.id !== deleteModal.leadId));
-      toast.success(result.message);
-    } else {
-      toast.error(result.message);
+      if (result.success) {
+        setLeads(leads.filter((lead) => lead.id !== deleteModal.leadId));
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error("An error occurred while deleting the lead");
+      console.error("Delete error:", error);
+    } finally {
+      setIsDeleting(false);
+      setDeleteModal({ isOpen: false, leadId: null, leadName: "" });
     }
-    setDeleteModal({ isOpen: false, leadId: null, leadName: "" });
   };
 
   const handleDeleteCancel = () => {
@@ -139,12 +148,15 @@ return (
         {/* You should also update the mobile view to use the correct data fields */}
         </div>
       {/* ... Table Footer and Delete Modal ... */}
-        <DeleteLeadModal
-        isOpen={deleteModal.isOpen}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        leadName={deleteModal.leadName}
-    />
+        {deleteModal.isOpen && deleteModal.leadId && (
+          <DeleteLeadModal
+            leadId={deleteModal.leadId}
+            leadName={deleteModal.leadName}
+            onDelete={handleDeleteConfirm}
+            onCancel={handleDeleteCancel}
+            isDeleting={isDeleting}
+          />
+        )}
 </>
 )
 }
