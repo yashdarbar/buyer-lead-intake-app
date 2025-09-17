@@ -9,9 +9,12 @@ import { Badge } from "@/components/ui/badge"
 import { deleteLead } from "../actions/buyers"
 import { DeleteLeadModal } from "@/components/delete-lead-modal"
 import toast from "react-hot-toast"
+import type { User } from "@supabase/supabase-js"
 
 interface LeadDetailsClientProps {
+  currentUser: User;
   lead: {
+    ownerId: string
     id: string
     fullName: string
     email: string | null
@@ -37,10 +40,12 @@ interface LeadDetailsClientProps {
   }
 }
 
-export function LeadDetailsClient({ lead }: LeadDetailsClientProps) {
+export function LeadDetailsClient({ lead, currentUser }: LeadDetailsClientProps) {
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+
+  const isOwner = lead.ownerId === currentUser.id;
 
   const formatCurrency = (amount: number | null) => {
     if (amount === null) return "—"
@@ -93,24 +98,26 @@ export function LeadDetailsClient({ lead }: LeadDetailsClientProps) {
           {/* Page Header */}
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900">Lead Details: {lead.fullName}</h1>
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-50 bg-transparent"
-                onClick={() => setShowDeleteModal(true)}
-                disabled={isDeleting}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {isDeleting ? "Deleting..." : "Delete"}
-              </Button>
-              <Link href={`/buyers/${lead.id}/edit`}>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
+            {isOwner && (
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50 bg-transparent"
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {isDeleting ? "Deleting..." : "Delete"}
                 </Button>
-              </Link>
-            </div>
+                <Link href={`/buyers/${lead.id}/edit`}>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 

@@ -19,6 +19,7 @@ interface AuthFormProps {
   className?: string
   mode: "login" | "signup"
   onSubmit?: (formData: AuthFormData) => Promise<void> | void
+  onDemoLogin?: () => Promise<void> | void
 }
 
 interface AuthFormData {
@@ -32,6 +33,7 @@ export function AuthForm({
   className,
   mode,
   onSubmit,
+  onDemoLogin,
   ...props
 }: AuthFormProps) {
   const isLogin = mode === "login"
@@ -105,7 +107,7 @@ export function AuthForm({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/buyers`,
         },
       });
 
@@ -240,6 +242,18 @@ export function AuthForm({
                 : (isLogin ? "Login" : "Create Account")
               }
             </Button>
+
+            {onDemoLogin && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                onClick={onDemoLogin}
+                disabled={isLoading}
+              >
+                Try Demo Account
+              </Button>
+            )}
           </div>
 
           <div className="text-center text-sm text-gray-400">

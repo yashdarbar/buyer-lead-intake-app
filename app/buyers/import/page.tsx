@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { importBuyersCSV } from "../actions/buyers"
+import toast from "react-hot-toast"
 
 export default function ImportBuyersPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -17,7 +18,7 @@ export default function ImportBuyersPage() {
     setErrors([])
     setMessage("")
     if (!file) {
-      setMessage("Please select a .csv file to import.")
+      toast.error("Please select a .csv file to import.")
       return
     }
 
@@ -25,17 +26,25 @@ export default function ImportBuyersPage() {
     formData.append("file", file)
 
     setIsSubmitting(true)
+    toast.loading("Preparing your import...", { id: "import" })
+
     try {
       const result = await importBuyersCSV(formData)
       if (!result?.success) {
+        toast.error(result?.message || "Import failed.", { id: "import" })
         setMessage(result?.message || "Import failed.")
         if (Array.isArray((result as any).errors)) {
           setErrors((result as any).errors as string[])
         }
       } else {
+        toast.success("Import successful! Your leads have been added.", { id: "import" })
         setMessage("Import successful. Your leads have been added.")
         setFile(null)
       }
+    } catch (error) {
+      console.error("Import error:", error)
+      toast.error("An error occurred during import.", { id: "import" })
+      setMessage("An error occurred during import.")
     } finally {
       setIsSubmitting(false)
     }

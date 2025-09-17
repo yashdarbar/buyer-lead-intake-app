@@ -31,9 +31,10 @@ const getStatusColor = (status: string) => {
 // 2. Define props for the component
 type BuyerLeadsTableProps = {
   initialLeads: Buyer[];
+  currentUserId: string;
 }
 
-export function BuyerLeadsTable({ initialLeads }: BuyerLeadsTableProps) {
+export function BuyerLeadsTable({ initialLeads, currentUserId }: BuyerLeadsTableProps) {
   // 3. Use the prop as the initial state and REMOVE mockLeads
   const [leads, setLeads] = useState(initialLeads)
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; leadId: string | null; leadName: string }>({
@@ -128,15 +129,22 @@ return (
                             <Eye className="mr-2 h-4 w-4" /> View Details
                             </Link>
                             </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                         <Link href={`/buyers/${lead.id}/edit`} className="flex items-center">
-                         <Edit className="mr-2 h-4 w-4" /> Edit Lead
-                        </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => handleDeleteClick(lead.id, lead.fullName)}
-                        >
-                         <Trash2 className="mr-2 h-4 w-4" /> Delete Lead
-                        </DropdownMenuItem>
+
+                        {lead.ownerId === currentUserId && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href={`/buyers/${lead.id}/edit`} className="flex items-center">
+                  <Edit className="mr-2 h-4 w-4" /> Edit Lead
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                onClick={() => handleDeleteClick(lead.id, lead.fullName)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Delete Lead
+              </DropdownMenuItem>
+            </>
+          )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                  </div>

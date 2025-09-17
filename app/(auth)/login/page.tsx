@@ -91,6 +91,16 @@ export default function SignInPage() {
     }
   }
 
+  const handleDemoLogin = async () => {
+    // NOTE: Ensure this demo user exists in your Supabase project.
+    const demoCredentials = {
+      email: 'darbaryash44@gmail.com',
+      password: '111111',
+    };
+
+    await handleLogin(demoCredentials);
+  }
+
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden flex items-center justify-center">
       <div className="absolute top-0 z-[0] h-screen w-screen bg-black-950/10 bg-white" />
@@ -113,7 +123,7 @@ export default function SignInPage() {
         </div>
 
         <div className="backdrop-blur-xl bg-white border border-white/10 rounded-2xl shadow-xl p-8">
-          <AuthForm mode="login" onSubmit={handleLogin} />
+          <AuthForm mode="login" onSubmit={handleLogin} onDemoLogin={handleDemoLogin} />
           {loading && (
             <div className="text-center text-sm text-gray-400 mt-4">
               Logging you in...

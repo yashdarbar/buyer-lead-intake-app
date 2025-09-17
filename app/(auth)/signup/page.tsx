@@ -60,6 +60,39 @@ export default function SignUpPage() {
   }
 }
 
+  const handleDemoLogin = async () => {
+    // NOTE: Ensure this demo user exists in your Supabase project.
+    const demoCredentials = {
+      email: 'darbaryash44@gmail.com',
+      password: '111111',
+    };
+
+    // For signup page, we'll redirect to login with demo credentials
+    // This allows users to try the demo from either page
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: demoCredentials.email,
+        password: demoCredentials.password,
+      });
+
+      if (error) {
+        toast.error('Demo login failed. Please try again.');
+        return;
+      }
+
+      if (data.user && data.session) {
+        toast.success('Demo login successful!');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        window.location.href = '/buyers';
+      }
+    } catch (err) {
+      toast.error('Demo login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden flex items-center justify-center">
       <div className="absolute top-0 z-[0] h-screen w-screen bg-black-950/10 bg-white" />
@@ -82,7 +115,7 @@ export default function SignUpPage() {
         </div>
 
         <div className="backdrop-blur-xl bg-white border border-white/10 rounded-2xl shadow-xl p-8">
-          <AuthForm mode="signup" onSubmit={handleSignup} />
+          <AuthForm mode="signup" onSubmit={handleSignup} onDemoLogin={handleDemoLogin} />
           {loading && (
             <div className="text-center text-sm text-gray-400 mt-4">
               Creating your account...

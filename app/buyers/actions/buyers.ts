@@ -9,14 +9,14 @@ import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 // import { Prisma } from '@prisma/client';
-import { Prisma, City, Status, PropertyType, Timeline } from '@prisma/client';
+import { City, Status, PropertyType, Timeline } from '@prisma/client';
 import { notFound } from 'next/navigation';
 // Lazy import to avoid type resolution at build if deps not installed yet
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import Papa from 'papaparse';
 
-// import type { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 export async function deleteLead(leadId: string) {
   const supabase = await createClient();
@@ -90,13 +90,13 @@ export async function createBuyerLead(formData: FormData) {
         },
       });
     });
+
+    revalidatePath('/buyers');
+    return { success: true, message: 'Lead created successfully.' };
   } catch (error) {
     console.error('Database Error:', error);
     return { success: false, message: 'Failed to create lead.' };
   }
-
-  revalidatePath('/buyers');
-  redirect('/buyers');
 }
 
 export async function getBuyers(
@@ -118,7 +118,7 @@ export async function getBuyers(
     const andConditions: Prisma.BuyerWhereInput[] = [];
 
     // Add owner filter to only show user's own leads
-    andConditions.push({ ownerId: user.id });
+    // andConditions.push({ ownerId: user.id });
 
     // --- SEARCH LOGIC ---
     if (query) {
@@ -186,99 +186,7 @@ export async function getBuyers(
     }
 }
 
-// export async function getBuyers(
-//     searchParams: { [key: string]: string | string[] | undefined }
-// ) {
-//     const supabase = await createClient();
-//     const { data: { user } } = await supabase.auth.getUser();
 
-//     if (!user) {
-//         return { buyers: [], totalPages: 0 };
-//     }
-
-//     const page = Number(Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page) || 1;
-//     const queryParamQ = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q;
-//     const queryParamQuery = Array.isArray(searchParams.query) ? searchParams.query[0] : searchParams.query;
-//     const query = queryParamQ || queryParamQuery || "";
-
-//     const pageSize = 10;
-//     const skip = (page - 1) * pageSize;
-
-//     const andConditions: Prisma.BuyerWhereInput[] = [];
-
-//     // Add owner filter to only show user's own leads
-//     andConditions.push({ ownerId: user.id });
-
-//     // --- SEARCH LOGIC ---
-//     if (query) {
-//         andConditions.push({
-//             OR: [
-//                 { fullName: { contains: query, mode: 'insensitive' } },
-//                 { email: { contains: query, mode: 'insensitive' } },
-//                 { phone: { contains: query } },
-//             ],
-//         });
-//     }
-
-//     // --- FILTER LOGIC using string whitelists to avoid enum casting issues ---
-//     const STATUS_VALUES = ['New','Qualified','Contacted','Visited','Negotiation','Converted','Dropped'];
-//     const CITY_VALUES = ['Chandigarh','Mohali','Zirakpur','Panchkula','Other'];
-//     const PROPERTY_TYPE_VALUES = ['Apartment','Villa','Plot','Office','Retail'];
-//     const TIMELINE_VALUES = ['IMMEDIATE','THREE_TO_SIX_MONTHS','MORE_THAN_SIX_MONTHS','Exploring'];
-
-//     const statusStr = (Array.isArray(searchParams.status) ? searchParams.status[0] : searchParams.status) as string | undefined;
-//     if (statusStr && STATUS_VALUES.includes(statusStr)) {
-//         andConditions.push({ status: statusStr as any });
-//     }
-
-//     const cityStr = (Array.isArray(searchParams.city) ? searchParams.city[0] : searchParams.city) as string | undefined;
-//     if (cityStr && CITY_VALUES.includes(cityStr)) {
-//         andConditions.push({ city: cityStr as any });
-//     }
-
-//     const propertyTypeStr = (Array.isArray(searchParams.propertyType) ? searchParams.propertyType[0] : searchParams.propertyType) as string | undefined;
-//     if (propertyTypeStr && PROPERTY_TYPE_VALUES.includes(propertyTypeStr)) {
-//         andConditions.push({ propertyType: propertyTypeStr as any });
-//     }
-
-//     const timelineStr = (Array.isArray(searchParams.timeline) ? searchParams.timeline[0] : searchParams.timeline) as string | undefined;
-//     if (timelineStr && TIMELINE_VALUES.includes(timelineStr)) {
-//         andConditions.push({ timeline: timelineStr as any });
-//     }
-
-//     // Budget filter logic
-//     const budgetStr = (Array.isArray(searchParams.budget) ? searchParams.budget[0] : searchParams.budget) as string | undefined;
-//     if (budgetStr && budgetStr !== "all") {
-//         const [minStr, maxStr] = budgetStr.split("-");
-//         const min = minStr ? parseInt(minStr) : null;
-//         const max = maxStr ? parseInt(maxStr) : null;
-
-//         if (min !== null) {
-//             andConditions.push({ budgetMax: { gte: min } });
-//         }
-//         if (max !== null) {
-//             andConditions.push({ budgetMin: { lte: max } });
-//         }
-//     }
-
-//     const where: Prisma.BuyerWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
-
-//     try {
-//         const buyers = await prisma.buyer.findMany({
-//             where,
-//             orderBy: { updatedAt: 'desc' },
-//             take: pageSize,
-//             skip: skip,
-//         });
-
-//         const totalBuyers = await prisma.buyer.count({ where });
-
-//         return { buyers, totalPages: Math.ceil(totalBuyers / pageSize) };
-//     } catch (error) {
-//         console.error('Database Error:', error);
-//         return { buyers: [], totalPages: 0 };
-//     }
-// }
 // Fetch a single buyer with ownership check and history
 export async function getBuyerById(id: string) {
   const supabase = await createClient();
@@ -291,11 +199,12 @@ export async function getBuyerById(id: string) {
     include: {
       history: {
         orderBy: { changedAt: 'desc' },
+        take: 5
       },
     },
   });
 
-  if (!buyer || buyer.ownerId !== user.id) {
+  if (!buyer) {
     notFound();
   }
 
@@ -367,14 +276,14 @@ export async function updateBuyerLead(id: string, formData: FormData) {
         },
       });
     });
+
+    revalidatePath('/buyers');
+    revalidatePath(`/buyers/${id}`);
+    return { success: true, message: 'Lead updated successfully.' } as const;
   } catch (error) {
     console.error('Database Error:', error);
     return { success: false, message: 'Failed to update lead.' } as const;
   }
-
-  revalidatePath('/buyers');
-  revalidatePath(`/buyers/${id}`);
-  redirect(`/buyers/${id}`);
 }
 
 // Import buyers from CSV with per-row validation

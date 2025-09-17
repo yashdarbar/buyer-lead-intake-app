@@ -7,6 +7,8 @@ import { useTransition } from "react"
 
 import { BuyerFormSchema } from "@/lib/validations/buyerSchema"
 import { Button } from "@/components/ui/button"
+import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -22,6 +24,7 @@ type Props = {
 
 export default function BuyerEditForm({ lead, onSubmitAction }: Props) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const form = useForm<BuyerFormInput>({
     resolver: zodResolver(BuyerFormSchema),
@@ -60,7 +63,21 @@ export default function BuyerEditForm({ lead, onSubmitAction }: Props) {
     }
     fd.append("updatedAt", new Date(lead.updatedAt).toISOString());
     startTransition(async () => {
-      await onSubmitAction(lead.id, fd);
+      try {
+        const result = await onSubmitAction(lead.id, fd);
+
+        if (result?.success === false) {
+          toast.error(result.message || "Failed to update lead");
+          return;
+        }
+
+        toast.success("Lead updated successfully!");
+        // Redirect to the lead details page after successful update
+        router.push(`/buyers/${lead.id}`);
+      } catch (error) {
+        console.error("Error updating lead:", error);
+        toast.error("An error occurred while updating the lead");
+      }
     });
   };
 

@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react"
 
 import { BuyerFormSchema } from "@/lib/validations/buyerSchema"
 import { createBuyerLead } from "../actions/buyers"
+import toast from "react-hot-toast"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,16 +59,30 @@ export default function NewBuyerLeadPage() {
   const tagList = tagsValue.split(",").map(tag => tag.trim()).filter(Boolean);
 
   const onSubmit = async (data: BuyerFormInput) => {
-    const formData = new FormData();
-    // Convert the structured data into FormData for the server action
-    for (const key in data) {
-      const value = data[key as keyof BuyerFormInput];
-      if (value !== null && value !== undefined) {
-        formData.append(key, String(value));
+    try {
+      const formData = new FormData();
+      // Convert the structured data into FormData for the server action
+      for (const key in data) {
+        const value = data[key as keyof BuyerFormInput];
+        if (value !== null && value !== undefined) {
+          formData.append(key, String(value));
+        }
       }
+
+      const result = await createBuyerLead(formData);
+
+      if (result?.success === false) {
+        toast.error(result.message || "Failed to create lead");
+        return;
+      }
+
+      toast.success("Lead created successfully!");
+      // Redirect to buyers page after successful creation
+      router.push('/buyers');
+    } catch (error) {
+      console.error("Error creating lead:", error);
+      toast.error("An error occurred while creating the lead");
     }
-    await createBuyerLead(formData);
-    // The server action will handle the redirect on success
   }
 
   return (

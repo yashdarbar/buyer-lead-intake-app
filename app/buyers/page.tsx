@@ -7,7 +7,7 @@ import { getBuyers } from "./actions/buyers";
 import { BuyerLeadsTable } from "@/components/buyer-leads-table";
 import { BuyerLeadsHeader } from "@/components/buyer-leads-header";
 import { Pagination } from "@/components/pagination";
-
+import { Suspense } from 'react'
 // ADD THIS LINE: This forces the page to be dynamically rendered on every request.
 export const dynamic = 'force-dynamic';
 
@@ -28,8 +28,10 @@ export default async function BuyersPage({ searchParams }: { searchParams: Buyer
   if (!user) {
     return redirect('/login');
   }
-
   const sp = await searchParams;
+  
+  const searchKey = Object.entries(sp).sort().toString()
+
   const { buyers, totalPages } = await getBuyers(sp);
 
   // Get current page for pagination component
@@ -40,10 +42,11 @@ export default async function BuyersPage({ searchParams }: { searchParams: Buyer
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BuyerLeadsHeader />
 
-        <main className="mt-8">
+        <Suspense key={searchKey} fallback={<div>Loading...</div>}>
+            <main className="mt-8">
           {buyers && buyers.length > 0 ? (
             <>
-              <BuyerLeadsTable initialLeads={buyers} />
+              <BuyerLeadsTable initialLeads={buyers} currentUserId={user.id}/>
               <Pagination currentPage={currentPage} totalPages={totalPages} />
             </>
           ) : (
@@ -53,6 +56,7 @@ export default async function BuyersPage({ searchParams }: { searchParams: Buyer
             </div>
           )}
         </main>
+        </Suspense>
       </div>
     </div>
   );

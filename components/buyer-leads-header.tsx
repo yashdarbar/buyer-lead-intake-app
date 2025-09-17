@@ -49,6 +49,8 @@ export function BuyerLeadsHeader() {
 
   const handleExportCSV = async () => {
     setIsExporting(true);
+    toast.loading("Preparing your export...", { id: "export" });
+
     try {
       const queryString = searchParams.toString();
       const result = await exportBuyersCSV(queryString);
@@ -65,13 +67,13 @@ export function BuyerLeadsHeader() {
         link.click();
         document.body.removeChild(link);
 
-        toast.success('CSV exported successfully!');
+        toast.success('Export started! Your CSV file is downloading.', { id: "export" });
       } else {
-        toast.error(result.message || 'Failed to export CSV');
+        toast.error(result.message || 'Failed to export CSV', { id: "export" });
       }
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('An error occurred while exporting CSV');
+      toast.error('An error occurred while exporting CSV', { id: "export" });
     } finally {
       setIsExporting(false);
     }

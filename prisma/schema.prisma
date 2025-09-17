@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,10 +9,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
-  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
-
-
 
 // ---------------------------------------------
 // ENUMS: Defining these separately keeps the models clean.
@@ -74,30 +68,28 @@ enum Status {
   Dropped
 }
 
-
 // ---------------------------------------------
 // MODELS: Your application's tables.
 // ---------------------------------------------
 
 model Buyer {
-  id           String        @id @default(uuid())
+  id           String        @id @default(uuid()) @db.Uuid
   fullName     String
   email        String?
   phone        String
   city         City?
   propertyType PropertyType?
-  bhk          Bhk? // Optional, as required
+  bhk          Bhk?
   purpose      Purpose?
   budgetMin    Int?
   budgetMax    Int?
   timeline     Timeline?
   source       Source?
-  status       Status        @default(New) // Default value set to New
-  notes        String?       @db.Text // @db.Text is better for long notes
-  tags         String[]      // Natively supported array type in PostgreSQL
+  status       Status        @default(New)
+  notes        String?       @db.Text
+  tags         String[]
 
-  // This is the crucial link to Supabase Auth.
-  // It stores the UUID of a user from the `auth.users` table.
+  // This stores the UUID of a user from the `auth.users` table.
   ownerId      String        @db.Uuid
 
   createdAt    DateTime      @default(now())
@@ -105,20 +97,15 @@ model Buyer {
 
   // This creates the one-to-many relationship with BuyerHistory
   history      BuyerHistory[]
-
-  // Note: Business logic like `budgetMax >= budgetMin` and string length
-  // constraints (2-80) will be handled by Zod in your application code,
-  // not directly in the database schema.
 }
 
 model BuyerHistory {
-  id        String   @id @default(uuid())
-  changedBy String // Can store the user's ID or email/name
+  id        String   @id @default(uuid()) @db.Uuid
+  changedBy String
   changedAt DateTime @default(now())
-  diff      Json // Prisma's native JSON type for storing changes
+  diff      Json
 
   // This defines the many-to-one relationship back to the Buyer
   buyer   Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  buyerId String   @db.Uuid // Foreign key constraint
+  buyerId String   @db.Uuid // Now matches Buyer.id type
 }
-
