@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 import { getBuyers } from "./actions/buyers";
 import { BuyerLeadsTable } from "@/components/buyer-leads-table";
 import { BuyerLeadsHeader } from "@/components/buyer-leads-header";
+import { Pagination } from "@/components/pagination";
 
 // ADD THIS LINE: This forces the page to be dynamically rendered on every request.
 export const dynamic = 'force-dynamic';
@@ -28,10 +29,11 @@ export default async function BuyersPage({ searchParams }: { searchParams: Buyer
     return redirect('/login');
   }
 
-//   const currentPage = Number(searchParams.page) || 1;
-//   const query = searchParams.query || '';
   const sp = await searchParams;
   const { buyers, totalPages } = await getBuyers(sp);
+
+  // Get current page for pagination component
+  const currentPage = Number(Array.isArray(sp.page) ? sp.page[0] : sp.page) || 1;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -40,15 +42,16 @@ export default async function BuyersPage({ searchParams }: { searchParams: Buyer
 
         <main className="mt-8">
           {buyers && buyers.length > 0 ? (
-            <BuyerLeadsTable initialLeads={buyers} />
+            <>
+              <BuyerLeadsTable initialLeads={buyers} />
+              <Pagination currentPage={currentPage} totalPages={totalPages} />
+            </>
           ) : (
             <div className="text-center py-16 bg-white border border-gray-200 rounded-lg">
               <h3 className="text-xl font-semibold text-gray-800">No Leads Found</h3>
               <p className="text-gray-500 mt-2">Create a new lead to get started!</p>
             </div>
           )}
-
-          {/* <Pagination currentPage={currentPage} totalPages={totalPages} /> */}
         </main>
       </div>
     </div>

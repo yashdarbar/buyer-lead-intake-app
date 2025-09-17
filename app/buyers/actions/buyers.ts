@@ -8,7 +8,8 @@ import prisma from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { Prisma } from '@prisma/client';
+// import { Prisma } from '@prisma/client';
+import { Prisma, City, Status, PropertyType, Timeline } from '@prisma/client';
 import { notFound } from 'next/navigation';
 // Lazy import to avoid type resolution at build if deps not installed yet
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -101,54 +102,72 @@ export async function createBuyerLead(formData: FormData) {
 export async function getBuyers(
     searchParams: { [key: string]: string | string[] | undefined }
 ) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { buyers: [], totalPages: 0 };
+    }
+
     const page = Number(Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page) || 1;
-    const queryParamQ = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q;
-    const queryParamQuery = Array.isArray(searchParams.query) ? searchParams.query[0] : searchParams.query;
-    const query = queryParamQ || queryParamQuery || "";
+    const query = (Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q) || "";
 
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
 
     const andConditions: Prisma.BuyerWhereInput[] = [];
 
+    // Add owner filter to only show user's own leads
+    andConditions.push({ ownerId: user.id });
+
     // --- SEARCH LOGIC ---
     if (query) {
         andConditions.push({
             OR: [
                 { fullName: { contains: query, mode: 'insensitive' } },
+                { email: { contains: query, mode: 'insensitive' } },
+                { phone: { contains: query } },
             ],
         });
     }
 
-    // --- FILTER LOGIC using string whitelists to avoid enum casting issues ---
-    const STATUS_VALUES = ['New','Qualified','Contacted','Visited','Negotiation','Converted','Dropped'];
-    const CITY_VALUES = ['Chandigarh','Mohali','Zirakpur','Panchkula','Other'];
-    const PROPERTY_TYPE_VALUES = ['Apartment','Villa','Plot','Office','Retail'];
-    const TIMELINE_VALUES = ['IMMEDIATE','THREE_TO_SIX_MONTHS','MORE_THAN_SIX_MONTHS','Exploring'];
-
-    const statusStr = (Array.isArray(searchParams.status) ? searchParams.status[0] : searchParams.status) as string | undefined;
-    if (statusStr && STATUS_VALUES.includes(statusStr)) {
-        andConditions.push({ status: statusStr as any });
+    // --- FILTER LOGIC (with corrected type casting) ---
+    const statusStr = (Array.isArray(searchParams.status) ? searchParams.status[0] : searchParams.status);
+    if (statusStr && Object.values(Status).includes(statusStr as Status)) {
+        andConditions.push({ status: statusStr as Status });
     }
 
-    const cityStr = (Array.isArray(searchParams.city) ? searchParams.city[0] : searchParams.city) as string | undefined;
-    if (cityStr && CITY_VALUES.includes(cityStr)) {
-        andConditions.push({ city: cityStr as any });
+    const cityStr = (Array.isArray(searchParams.city) ? searchParams.city[0] : searchParams.city);
+    if (cityStr && Object.values(City).includes(cityStr as City)) {
+        andConditions.push({ city: cityStr as City });
     }
 
-    const propertyTypeStr = (Array.isArray(searchParams.propertyType) ? searchParams.propertyType[0] : searchParams.propertyType) as string | undefined;
-    if (propertyTypeStr && PROPERTY_TYPE_VALUES.includes(propertyTypeStr)) {
-        andConditions.push({ propertyType: propertyTypeStr as any });
+    const propertyTypeStr = (Array.isArray(searchParams.propertyType) ? searchParams.propertyType[0] : searchParams.propertyType);
+    if (propertyTypeStr && Object.values(PropertyType).includes(propertyTypeStr as PropertyType)) {
+        andConditions.push({ propertyType: propertyTypeStr as PropertyType });
     }
 
-    const timelineStr = (Array.isArray(searchParams.timeline) ? searchParams.timeline[0] : searchParams.timeline) as string | undefined;
-    if (timelineStr && TIMELINE_VALUES.includes(timelineStr)) {
-        andConditions.push({ timeline: timelineStr as any });
+    const timelineStr = (Array.isArray(searchParams.timeline) ? searchParams.timeline[0] : searchParams.timeline);
+    if (timelineStr && Object.values(Timeline).includes(timelineStr as Timeline)) {
+        andConditions.push({ timeline: timelineStr as Timeline });
     }
 
-    // You can add budget range logic here later if needed
+    // Budget filter logic
+    const budgetStr = (Array.isArray(searchParams.budget) ? searchParams.budget[0] : searchParams.budget);
+    if (budgetStr && budgetStr !== "all") {
+        const [minStr, maxStr] = budgetStr.split("-");
+        const min = minStr ? parseInt(minStr) : null;
+        const max = maxStr ? parseInt(maxStr) : null;
 
-    const where: Prisma.BuyerWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+        if (min !== null && !isNaN(min)) {
+            andConditions.push({ budgetMax: { gte: min } });
+        }
+        if (max !== null && !isNaN(max)) {
+            andConditions.push({ budgetMin: { lte: max } });
+        }
+    }
+
+    const where: Prisma.BuyerWhereInput = { AND: andConditions };
 
     try {
         const buyers = await prisma.buyer.findMany({
@@ -166,6 +185,100 @@ export async function getBuyers(
         return { buyers: [], totalPages: 0 };
     }
 }
+
+// export async function getBuyers(
+//     searchParams: { [key: string]: string | string[] | undefined }
+// ) {
+//     const supabase = await createClient();
+//     const { data: { user } } = await supabase.auth.getUser();
+
+//     if (!user) {
+//         return { buyers: [], totalPages: 0 };
+//     }
+
+//     const page = Number(Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page) || 1;
+//     const queryParamQ = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q;
+//     const queryParamQuery = Array.isArray(searchParams.query) ? searchParams.query[0] : searchParams.query;
+//     const query = queryParamQ || queryParamQuery || "";
+
+//     const pageSize = 10;
+//     const skip = (page - 1) * pageSize;
+
+//     const andConditions: Prisma.BuyerWhereInput[] = [];
+
+//     // Add owner filter to only show user's own leads
+//     andConditions.push({ ownerId: user.id });
+
+//     // --- SEARCH LOGIC ---
+//     if (query) {
+//         andConditions.push({
+//             OR: [
+//                 { fullName: { contains: query, mode: 'insensitive' } },
+//                 { email: { contains: query, mode: 'insensitive' } },
+//                 { phone: { contains: query } },
+//             ],
+//         });
+//     }
+
+//     // --- FILTER LOGIC using string whitelists to avoid enum casting issues ---
+//     const STATUS_VALUES = ['New','Qualified','Contacted','Visited','Negotiation','Converted','Dropped'];
+//     const CITY_VALUES = ['Chandigarh','Mohali','Zirakpur','Panchkula','Other'];
+//     const PROPERTY_TYPE_VALUES = ['Apartment','Villa','Plot','Office','Retail'];
+//     const TIMELINE_VALUES = ['IMMEDIATE','THREE_TO_SIX_MONTHS','MORE_THAN_SIX_MONTHS','Exploring'];
+
+//     const statusStr = (Array.isArray(searchParams.status) ? searchParams.status[0] : searchParams.status) as string | undefined;
+//     if (statusStr && STATUS_VALUES.includes(statusStr)) {
+//         andConditions.push({ status: statusStr as any });
+//     }
+
+//     const cityStr = (Array.isArray(searchParams.city) ? searchParams.city[0] : searchParams.city) as string | undefined;
+//     if (cityStr && CITY_VALUES.includes(cityStr)) {
+//         andConditions.push({ city: cityStr as any });
+//     }
+
+//     const propertyTypeStr = (Array.isArray(searchParams.propertyType) ? searchParams.propertyType[0] : searchParams.propertyType) as string | undefined;
+//     if (propertyTypeStr && PROPERTY_TYPE_VALUES.includes(propertyTypeStr)) {
+//         andConditions.push({ propertyType: propertyTypeStr as any });
+//     }
+
+//     const timelineStr = (Array.isArray(searchParams.timeline) ? searchParams.timeline[0] : searchParams.timeline) as string | undefined;
+//     if (timelineStr && TIMELINE_VALUES.includes(timelineStr)) {
+//         andConditions.push({ timeline: timelineStr as any });
+//     }
+
+//     // Budget filter logic
+//     const budgetStr = (Array.isArray(searchParams.budget) ? searchParams.budget[0] : searchParams.budget) as string | undefined;
+//     if (budgetStr && budgetStr !== "all") {
+//         const [minStr, maxStr] = budgetStr.split("-");
+//         const min = minStr ? parseInt(minStr) : null;
+//         const max = maxStr ? parseInt(maxStr) : null;
+
+//         if (min !== null) {
+//             andConditions.push({ budgetMax: { gte: min } });
+//         }
+//         if (max !== null) {
+//             andConditions.push({ budgetMin: { lte: max } });
+//         }
+//     }
+
+//     const where: Prisma.BuyerWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+
+//     try {
+//         const buyers = await prisma.buyer.findMany({
+//             where,
+//             orderBy: { updatedAt: 'desc' },
+//             take: pageSize,
+//             skip: skip,
+//         });
+
+//         const totalBuyers = await prisma.buyer.count({ where });
+
+//         return { buyers, totalPages: Math.ceil(totalBuyers / pageSize) };
+//     } catch (error) {
+//         console.error('Database Error:', error);
+//         return { buyers: [], totalPages: 0 };
+//     }
+// }
 // Fetch a single buyer with ownership check and history
 export async function getBuyerById(id: string) {
   const supabase = await createClient();

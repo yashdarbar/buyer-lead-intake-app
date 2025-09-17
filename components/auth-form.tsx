@@ -117,13 +117,13 @@ export function AuthForm({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
+    <div className={cn("flex flex-col gap-6 bg-white", className)} {...props}>
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-white mb-2">
+          <h2 className="text-2xl font-bold text-black mb-2">
             {isLogin ? "Welcome back" : "Create an account"}
           </h2>
-          <p className="text-gray-400">
+          <p className="text-black">
             {isLogin
               ? "Sign in to your account to continue"
               : "Join us and start creating amazing content"
@@ -136,7 +136,7 @@ export function AuthForm({
             <Button
               type="button"
               variant="default"
-              className="w-full bg-black/20 border-white/10 text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200"
+              className="w-full bg-black border-white/10 text-white hover:bg-black/30 hover:border-black/20 transition-all duration-200"
               onClick={handleGoogleAuth}
               disabled={isLoading}
             >
@@ -155,7 +155,7 @@ export function AuthForm({
               <div className="w-full border-t border-white/10"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-black/30 px-2 text-gray-400">
+              <span className="px-2 text-black">
                 Or continue with
               </span>
             </div>
@@ -164,7 +164,7 @@ export function AuthForm({
           <div className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-300">Full Name</Label>
+                <Label htmlFor="name" className="text-sm font-medium text-black">Full Name</Label>
                 <Input
                   id="name"
                   type="text"
@@ -173,13 +173,13 @@ export function AuthForm({
                   onChange={handleInputChange}
                   required
                   disabled={isLoading}
-                  className="bg-black/20 border-white/10 text-white placeholder:text-gray-500 focus:border-purple-500/50 focus:ring-purple-500/20"
+                  className="bg-black/20 border-white/10 text-black placeholder:text-gray-500 focus:border-black-500/50 focus:ring-black-500/20"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-300">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-black">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -188,17 +188,17 @@ export function AuthForm({
                 onChange={handleInputChange}
                 required
                 disabled={isLoading}
-                className="bg-black/20 border-white/10 text-white placeholder:text-gray-500 focus:border-purple-500/50 focus:ring-purple-500/20"
+                className="bg-black/20 border-white/10 text-black placeholder:text-gray-500 focus:border-black-500/50 focus:ring-black-500/20"
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-300">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-black">Password</Label>
                 {/* {isLogin && (
                   <a
                     href="#"
-                    className="text-xs text-purple-400 hover:text-purple-300 underline"
+                    className="text-xs text-black-400 hover:text-black-300 underline"
                   >
                     Forgot your password?
                   </a>
@@ -211,13 +211,13 @@ export function AuthForm({
                 onChange={handleInputChange}
                 required
                 disabled={isLoading}
-                className="bg-black/20 border-white/10 text-white placeholder:text-gray-500 focus:border-purple-500/50 focus:ring-purple-500/20"
+                className="bg-black/20 border-white/10 text-black placeholder:text-gray-500 focus:border-black-500/50 focus:ring-black-500/20"
               />
             </div>
 
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-300">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-black">Confirm Password</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -225,14 +225,14 @@ export function AuthForm({
                   onChange={handleInputChange}
                   required
                   disabled={isLoading}
-                  className="bg-black/20 border-white/10 text-white placeholder:text-gray-500 focus:border-purple-500/50 focus:ring-purple-500/20"
+                  className="bg-black/20 border-white/10 text-black placeholder:text-gray-500 focus:border-black-500/50 focus:ring-black-500/20"
                 />
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-purple-500/25 transition-all duration-200"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200"
               disabled={isLoading}
             >
               {isLoading
@@ -246,7 +246,7 @@ export function AuthForm({
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <Link
               href={isLogin ? "/signup" : "/login"}
-              className="text-purple-400 hover:text-purple-300 underline"
+              className="text-black hover:text-black-300 underline"
             >
               {isLogin ? "Sign up" : "Login"}
             </Link>
